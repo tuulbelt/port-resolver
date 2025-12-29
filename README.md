@@ -244,20 +244,14 @@ This tool integrates with Tuulbelt's dogfooding strategy:
 
 See [DOGFOODING_STRATEGY.md](./DOGFOODING_STRATEGY.md) for the full composition strategy.
 
+
 ## Demo
 
 ![Demo](docs/demo.gif)
 
 **[▶ View interactive recording on asciinema.org](#)**
 
-<div>
-  <span style="display: inline-block; vertical-align: middle; margin-right: 8px;"><strong>Try it online:</strong></span>
-  <a href="https://stackblitz.com/github/tuulbelt/tuulbelt/tree/main/test-port-resolver" style="display: inline-block; vertical-align: middle;">
-    <img src="https://developer.stackblitz.com/img/open_in_stackblitz.svg" alt="Open in StackBlitz" style="vertical-align: middle;">
-  </a>
-</div>
-
-> Demos are automatically generated and embedded via GitHub Actions when demo scripts are updated.
+> Try it online: [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/tuulbelt/tuulbelt/tree/main/test-port-resolver)
 
 ## License
 
