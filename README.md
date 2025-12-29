@@ -3,11 +3,13 @@
 [![Tests](https://github.com/tuulbelt/tuulbelt/actions/workflows/test-all-tools.yml/badge.svg)](https://github.com/tuulbelt/tuulbelt/actions/workflows/test-all-tools.yml)
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
-![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success)
+![Uses semats](https://img.shields.io/badge/uses-semats-blue)
 ![Tests](https://img.shields.io/badge/tests-56%20passing-success)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Concurrent test port allocation — avoid port conflicts in parallel tests.
+
+> **Library Composition**: This tool uses [file-based-semaphore-ts](../file-based-semaphore-ts/) for atomic registry access, following [PRINCIPLES.md Exception 2](../PRINCIPLES.md). Since all Tuulbelt tools have zero external dependencies, composing them preserves the zero-dep guarantee.
 
 ## Problem
 
@@ -29,10 +31,10 @@ This happens because:
 
 ## Features
 
-- **Zero runtime dependencies** — Uses only Node.js standard library
+- **Zero external dependencies** — Uses only Node.js standard library + Tuulbelt tools
 - **File-based registry** — Survives process restarts
 - **Stale entry cleanup** — Automatically removes dead process entries
-- **Optional semaphore integration** — Uses `file-based-semaphore-ts` when available
+- **Semaphore-protected registry** — Atomic access via [semats](../file-based-semaphore-ts/)
 - **Result pattern** — Clear error handling without exceptions
 - **CLI and library API** — Use from shell or TypeScript
 
@@ -43,10 +45,10 @@ Clone the repository:
 ```bash
 git clone https://github.com/tuulbelt/tuulbelt.git
 cd tuulbelt/test-port-resolver
-npm install  # Install dev dependencies only
+npm install  # Installs dev dependencies + links sibling semats
 ```
 
-No runtime dependencies — this tool uses only Node.js standard library.
+**Zero external dependencies** — uses only Node.js standard library and [file-based-semaphore-ts](../file-based-semaphore-ts/) (a Tuulbelt tool with zero external deps).
 
 **CLI names** — both short and long forms work:
 - Short (recommended): `portres`
@@ -199,11 +201,11 @@ npm test              # Run all tests (56 tests)
 npm test -- --watch   # Watch mode
 ```
 
-## Semaphore Integration
+## Library Composition
 
-When running in the Tuulbelt monorepo, **portres** automatically detects and uses `file-based-semaphore-ts` for atomic registry access. This provides additional safety for highly concurrent scenarios.
+**portres** uses [file-based-semaphore-ts](../file-based-semaphore-ts/) (`semats`) as a library dependency for atomic registry access. This follows [PRINCIPLES.md Exception 2](../PRINCIPLES.md) — Tuulbelt tools can compose other Tuulbelt tools since they all have zero external dependencies.
 
-When running standalone, the tool works without the semaphore (graceful fallback).
+The semaphore ensures that concurrent port allocations from multiple processes never corrupt the registry file, even under high parallelism.
 
 ## Error Handling
 

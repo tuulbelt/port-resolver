@@ -28,6 +28,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "dependencies": {
+    "@tuulbelt/file-based-semaphore-ts": "file:../file-based-semaphore-ts"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsx": "^4.7.0",

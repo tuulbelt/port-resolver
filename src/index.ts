@@ -3,7 +3,7 @@
  * Test Port Resolver / portres
  *
  * Concurrent test port allocation - avoid port conflicts in parallel tests.
- * Uses file-based registry with optional semaphore integration for atomic access.
+ * Uses file-based registry with semaphore integration for atomic access.
  *
  * Part of the Tuulbelt collection: https://github.com/tuulbelt
  */
@@ -13,6 +13,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, realpat
 import { join, resolve, normalize } from 'node:path';
 import { homedir } from 'node:os';
 import { randomBytes } from 'node:crypto';
+
+// Tuulbelt tool composition - semats for atomic registry access (PRINCIPLES.md Exception 2)
+import { Semaphore } from '@tuulbelt/file-based-semaphore-ts';
 
 // ============================================================================
 // Types
@@ -82,50 +85,6 @@ export interface RegistryStatus {
   staleEntries: number;
   ownedByCurrentProcess: number;
   portRange: { min: number; max: number };
-}
-
-// ============================================================================
-// Semaphore Integration (Optional)
-// ============================================================================
-
-interface SemaphoreInstance {
-  tryAcquire(tag?: string): Result<{ acquired: true; lockPath: string } | { acquired: false; holder: { pid: number; timestamp: number; tag?: string } }>;
-  acquire(options?: { timeout?: number; tag?: string }): Promise<Result<{ acquired: true; lockPath: string }>>;
-  release(): Result<{ released: true }>;
-}
-
-interface SemaphoreModule {
-  Semaphore: new (lockPath: string) => SemaphoreInstance;
-}
-
-let semaphoreModule: SemaphoreModule | null = null;
-let semaphoreLoadAttempted = false;
-
-/**
- * Try to load the semaphore module (file-based-semaphore-ts)
- * Returns null if not available (graceful fallback)
- */
-async function loadSemaphore(): Promise<SemaphoreModule | null> {
-  if (semaphoreLoadAttempted) {
-    return semaphoreModule;
-  }
-  semaphoreLoadAttempted = true;
-
-  try {
-    // Try to load from sibling directory (monorepo context)
-    const siblingPath = join(process.cwd(), '..', 'file-based-semaphore-ts', 'src', 'index.ts');
-    if (existsSync(siblingPath)) {
-      const module = await import(`file://${siblingPath}`);
-      if (module.Semaphore) {
-        semaphoreModule = module as SemaphoreModule;
-        return semaphoreModule;
-      }
-    }
-  } catch {
-    // Ignore - semaphore not available
-  }
-
-  return null;
 }
 
 // ============================================================================
@@ -411,36 +370,28 @@ export class PortResolver {
   }
 
   /**
-   * Acquire a lock on the registry (if semaphore available)
+   * Acquire a lock on the registry using semats.
+   * This ensures atomic access to the port registry across processes.
    */
   private async acquireLock(): Promise<{ release: () => void }> {
-    const sema = await loadSemaphore();
-    if (!sema) {
-      // No semaphore available - proceed without locking
-      return { release: () => {} };
-    }
-
     const lockPathResult = getLockPath(this.config);
     if (!lockPathResult.ok) {
-      return { release: () => {} };
+      throw new Error(`Failed to get lock path: ${lockPathResult.error.message}`);
     }
 
     const dirResult = ensureRegistryDir(this.config);
     if (!dirResult.ok) {
-      return { release: () => {} };
+      throw new Error(`Failed to ensure registry directory: ${dirResult.error.message}`);
     }
 
-    try {
-      const semaphore = new sema.Semaphore(lockPathResult.value);
-      const result = await semaphore.acquire({ timeout: 5000, tag: 'portres' });
-      if (result.ok) {
-        return { release: () => semaphore.release() };
-      }
-    } catch {
-      // Ignore lock errors - proceed without locking
+    const semaphore = new Semaphore(lockPathResult.value);
+    const result = await semaphore.acquire({ timeout: 5000, tag: 'portres' });
+
+    if (!result.ok) {
+      throw new Error(`Failed to acquire lock: ${result.error.message}`);
     }
 
-    return { release: () => {} };
+    return { release: () => semaphore.release() };
   }
 
   /**
