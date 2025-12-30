@@ -18,7 +18,7 @@ Concurrent test port allocation to avoid port conflicts in parallel tests. Provi
 
 ```bash
 npm install  # Install dev dependencies
-npm test     # Run all tests (56 tests)
+npm test     # Run all tests (79 tests)
 npm run build  # TypeScript compilation
 npm link     # Enable global 'portres' command
 ```
@@ -53,9 +53,14 @@ if (!allowPrivileged && port < 1024) { /* reject */ }
 
 ## Testing
 
-- **56 tests across 7 suites**
-- Categories: Basic API, CLI, Error Handling, Security, Registry Management, Edge Cases, Stress Tests
-- **Performance tests**: 50 sequential allocations, 20-port batches, rapid cycles
+- **79 tests across 13 suites**
+- Categories: Basic API, CLI, Error Handling, Security, Registry Management, Edge Cases, Stress Tests, Concurrent Execution, Semaphore Integration, Performance Benchmarks, Extended Network Tests, Extended Cleanup Tests, Cross-Process Integration
+- **New concurrent tests**: Promise.all parallel allocations, race condition prevention
+- **New semaphore tests**: Atomic registry operations, lock acquisition/release verification
+- **New performance benchmarks**: Allocation latency (<100ms), linear scaling validation
+- **New network tests**: IPv6 support, interface binding, port boundary testing
+- **New cleanup tests**: Rapid cycles, stale entries, registry consistency, concurrent access
+- **New cross-process tests**: Multi-process coordination via child_process.fork()
 - **Security tests**: Path traversal, tag injection, privileged ports
 
 ## Common Issues

@@ -4,7 +4,7 @@
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![Uses semats](https://img.shields.io/badge/uses-semats-blue)
-![Tests](https://img.shields.io/badge/tests-56%20passing-success)
+![Tests](https://img.shields.io/badge/tests-79%20passing-success)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Concurrent test port allocation — avoid port conflicts in parallel tests.
@@ -197,7 +197,7 @@ npx tsx examples/advanced.ts  # Advanced patterns
 ## Testing
 
 ```bash
-npm test              # Run all tests (56 tests)
+npm test              # Run all tests (79 tests)
 npm test -- --watch   # Watch mode
 ```
 
