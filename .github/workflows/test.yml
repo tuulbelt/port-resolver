@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Verify zero external dependencies
+        run: |
+          # Check dependencies field exists and allows only @tuulbelt/* packages
+          if grep -q '"dependencies"' package.json; then
+            # Extract dependencies object and check for non-tuulbelt packages
+            DEPS=$(node -e "const pkg = require('./package.json'); console.log(Object.keys(pkg.dependencies || {}).filter(d => !d.startsWith('@tuulbelt/')).join('\n'))")
+            if [ -n "$DEPS" ]; then
+              echo "ERROR: Found external runtime dependencies:"
+              echo "$DEPS"
+              exit 1
+            fi
+          fi
+          echo "✓ Zero external dependencies verified (Tuulbelt tools allowed)"
