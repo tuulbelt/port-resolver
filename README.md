@@ -1,33 +1,36 @@
-# Test Port Resolver / `portres`
+# Port Resolver / `portres`
 
-[![Tests](https://github.com/tuulbelt/test-port-resolver/actions/workflows/test.yml/badge.svg)](https://github.com/tuulbelt/test-port-resolver/actions/workflows/test.yml)
+[![Tests](https://github.com/tuulbelt/port-resolver/actions/workflows/test.yml/badge.svg)](https://github.com/tuulbelt/port-resolver/actions/workflows/test.yml)
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![Uses semats](https://img.shields.io/badge/uses-semats-blue)
 ![Tests](https://img.shields.io/badge/tests-79%20passing-success)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Concurrent test port allocation — avoid port conflicts in parallel tests.
+Concurrent port allocation for any application — avoid port conflicts in tests, servers, microservices, and development environments.
 
 > **Library Composition**: This tool uses [file-based-semaphore-ts](https://github.com/tuulbelt/file-based-semaphore-ts) for atomic registry access, following [PRINCIPLES.md Exception 2](https://github.com/tuulbelt/tuulbelt/blob/main/PRINCIPLES.md). Since all Tuulbelt tools have zero external dependencies, composing them preserves the zero-dep guarantee.
 
 ## Problem
 
-Running tests in parallel often causes "port already in use" errors:
+Running concurrent processes that need ports often causes "port already in use" errors:
 
 ```
 Error: listen EADDRINUSE: address already in use :::3000
 ```
 
-This happens because:
-- Multiple test files try to use the same hardcoded ports
-- Tests don't know which ports other tests are using
-- Random port selection can still collide under high parallelism
+This happens in many scenarios:
+- **Parallel tests**: Multiple test files try to use the same hardcoded ports
+- **Development environments**: Multiple services started simultaneously
+- **Microservices**: Services don't know which ports other services are using
+- **CI/CD pipelines**: Concurrent builds running on the same machine
+- **Docker/containers**: Random port selection can still collide under high parallelism
 
 **portres** solves this by providing a centralized port registry:
-- Each test requests a port from the registry
+- Each process requests a port from the registry
 - The registry ensures ports are unique across all processes
 - Ports are automatically released when processes exit
+- Works across languages, frameworks, and applications
 
 ## Features
 
@@ -43,8 +46,8 @@ This happens because:
 Clone the repository:
 
 ```bash
-git clone https://github.com/tuulbelt/test-port-resolver.git
-cd test-port-resolver
+git clone https://github.com/tuulbelt/port-resolver.git
+cd port-resolver
 npm install  # Installs dev dependencies + auto-fetches file-based-semaphore-ts from GitHub
 ```
 
@@ -52,7 +55,7 @@ npm install  # Installs dev dependencies + auto-fetches file-based-semaphore-ts 
 
 **CLI names** — both short and long forms work:
 - Short (recommended): `portres`
-- Long: `test-port-resolver`
+- Long: `port-resolver`
 
 **Recommended setup** — install globally for easy access:
 
@@ -251,7 +254,7 @@ See [DOGFOODING_STRATEGY.md](./DOGFOODING_STRATEGY.md) for the full composition 
 
 **[▶ View interactive recording on asciinema.org](#)**
 
-> Try it online: [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/tuulbelt/test-port-resolver)
+> Try it online: [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/tuulbelt/port-resolver)
 
 ## License
 

@@ -1,12 +1,12 @@
 {
-  "name": "@tuulbelt/test-port-resolver",
+  "name": "@tuulbelt/port-resolver",
   "version": "0.1.0",
-  "description": "Concurrent test port allocation - avoid port conflicts in parallel tests",
+  "description": "Concurrent port allocation for any application - avoid port conflicts in tests, servers, microservices, and development environments",
   "main": "src/index.ts",
   "type": "module",
   "bin": {
     "portres": "./src/index.ts",
-    "test-port-resolver": "./src/index.ts"
+    "port-resolver": "./src/index.ts"
   },
   "scripts": {
     "build": "tsc",
@@ -16,16 +16,20 @@
   "keywords": [
     "tuulbelt",
     "port",
-    "test",
+    "port-allocation",
     "concurrent",
-    "allocation"
+    "testing",
+    "server",
+    "microservices",
+    "development",
+    "registry"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tuulbelt/test-port-resolver.git"
+    "url": "https://github.com/tuulbelt/port-resolver.git"
   },
-  "homepage": "https://github.com/tuulbelt/test-port-resolver#readme",
+  "homepage": "https://github.com/tuulbelt/port-resolver#readme",
   "bugs": {
     "url": "https://github.com/tuulbelt/tuulbelt/issues"
   },

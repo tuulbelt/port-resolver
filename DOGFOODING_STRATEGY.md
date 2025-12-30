@@ -1,6 +1,6 @@
-# Dogfooding Strategy: Test Port Resolver (portres)
+# Dogfooding Strategy: Port Resolver (portres)
 
-**Tool:** Test Port Resolver (`portres`)
+**Tool:** Port Resolver (`portres`)
 **Dependencies:** `@tuulbelt/file-based-semaphore-ts` (REQUIRED)
 **Classification:** Phase 2 Wave 2 (REQUIRED dependency pattern)
 
@@ -10,7 +10,7 @@ This document outlines how this tool leverages other Tuulbelt tools to demonstra
 
 ## Library Composition (REQUIRED Dependency)
 
-Test Port Resolver uses **file-based-semaphore-ts** as a **REQUIRED** library dependency, demonstrating PRINCIPLES.md Exception 2: Tuulbelt tools may compose other Tuulbelt tools while maintaining zero external dependencies.
+Port Resolver uses **file-based-semaphore-ts** as a **REQUIRED** library dependency, demonstrating PRINCIPLES.md Exception 2: Tuulbelt tools may compose other Tuulbelt tools while maintaining zero external dependencies.
 
 ### Why This Composition is Essential
 
@@ -220,14 +220,14 @@ async get(): Promise<Result<PortAllocation>> {
 
 ```bash
 # Standalone (auto-fetches dependency):
-git clone https://github.com/tuulbelt/test-port-resolver.git
-cd test-port-resolver
+git clone https://github.com/tuulbelt/port-resolver.git
+cd port-resolver
 npm install  # Automatically clones file-based-semaphore-ts
 npm test     # All 79 tests pass
 
 # Monorepo (submodules):
 git submodule update --init --recursive
-cd tools/test-port-resolver
+cd tools/port-resolver
 npm install
 npm test
 ```
@@ -241,7 +241,7 @@ Both contexts work identically - dependency auto-fetched in both cases.
 **Transitive Closure Verification:**
 
 ```bash
-# test-port-resolver dependencies:
+# port-resolver dependencies:
 cat package.json | grep -A 5 '"dependencies"'
 # "@tuulbelt/file-based-semaphore-ts": "git+https://github.com/..."
 

@@ -1,10 +1,10 @@
-# Test Port Resolver / portres
+# Port Resolver / portres
 
 **Tool-specific Claude Code context for development**
 
 ## What This Tool Does
 
-Concurrent test port allocation to avoid port conflicts in parallel tests. Provides a centralized port registry with atomic access via file-based semaphores.
+Concurrent port allocation for any application. Provides a centralized port registry with atomic access via file-based semaphores. Used in tests, servers, microservices, development environments, and anywhere port conflicts occur.
 
 ## Key Architecture
 
