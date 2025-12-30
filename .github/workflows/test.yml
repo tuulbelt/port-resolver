@@ -21,6 +21,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Dogfood (flakiness + semaphore)
+        run: npm run dogfood
       - name: Verify zero external dependencies
         run: |
           # Check dependencies field exists and allows only @tuulbelt/* packages

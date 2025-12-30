@@ -11,7 +11,10 @@
   "scripts": {
     "build": "tsc",
     "test": "node --import tsx --test test/index.test.ts",
-    "test:watch": "node --import tsx --test --watch test/index.test.ts"
+    "test:watch": "node --import tsx --test --watch test/index.test.ts",
+    "dogfood": "npm run dogfood:flaky && npm run dogfood:semaphore",
+    "dogfood:flaky": "flaky --test 'npm test' --runs 10",
+    "dogfood:semaphore": "npx tsx test/dogfood-semaphore.ts"
   },
   "keywords": [
     "tuulbelt",
@@ -40,6 +43,7 @@
     "@tuulbelt/file-based-semaphore-ts": "git+https://github.com/tuulbelt/file-based-semaphore-ts.git"
   },
   "devDependencies": {
+    "@tuulbelt/test-flakiness-detector": "git+https://github.com/tuulbelt/test-flakiness-detector.git",
     "@types/node": "^20.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
