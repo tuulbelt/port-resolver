@@ -97,8 +97,8 @@ jobs:
           if [ -f demo-url.txt ]; then
             ASCIINEMA_URL=$(cat demo-url.txt | tr -d '
 ')
-            # Update README: replace href="#" with actual URL
-            sed -i "s|href=\"#\"|href=\"$ASCIINEMA_URL\"|g" README.md
+            # Update README: replace markdown placeholder link with actual URL
+            sed -i "s|(#)|($ASCIINEMA_URL)|g" README.md
             echo "✓ Updated README with asciinema URL: $ASCIINEMA_URL"
           else
             echo "⊘ No demo-url.txt found, skipping README update"
