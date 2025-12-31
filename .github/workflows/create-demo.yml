@@ -4,12 +4,11 @@ on:
   # Triggered manually or by meta repo
   workflow_dispatch:
 
-  # Auto-trigger when demo script or tool source changes
+  # Auto-trigger when implementation changes
   push:
     branches:
       - main
     paths:
-      - 'scripts/record-demo.sh'
       - 'src/**'
       - 'lib/**'
 
