@@ -6,77 +6,96 @@ TOOL_NAME="port-resolver"
 SHORT_NAME="portres"
 LANGUAGE="typescript"
 
-# Use custom GIF parameters (different from default)
-GIF_COLS=80
-GIF_ROWS=24
-GIF_SPEED=1.5
-
-demo_setup() {
-  rm -rf /tmp/portres-demo
-}
+# GIF parameters
+GIF_COLS=100
+GIF_ROWS=30
+GIF_SPEED=1.0
+GIF_FONT_SIZE=14
 
 demo_cleanup() {
-  rm -rf /tmp/portres-demo
+  # Clean up any allocated ports
+  portres cleanup 2>/dev/null || true
 }
 
 demo_commands() {
-  echo "Test Port Resolver / portres - Demo"
-  echo "====================================="
-  echo
+  # ═══════════════════════════════════════════
+  # Test Port Resolver / portres - Tuulbelt
+  # ═══════════════════════════════════════════
+
+  # Step 1: Installation
+  echo "# Step 1: Install globally"
   sleep 0.5
+  echo "$ npm link"
+  sleep 1
 
-  echo "1. Get an available port:"
-  sleep 0.3
+  # Step 2: View help
+  echo ""
+  echo "# Step 2: View available commands"
+  sleep 0.5
+  echo "$ portres --help"
+  sleep 0.5
+  portres --help
+  sleep 3
+
+  # Step 3: Get a random available port
+  echo ""
+  echo "# Step 3: Get random available port"
+  sleep 0.5
   echo "$ portres get"
-  portres get -d /tmp/portres-demo
-  sleep 1
+  sleep 0.5
+  PORT1=$(portres get)
+  echo "$PORT1"
+  sleep 2
 
-  echo
-  echo "2. Get multiple ports at once:"
-  sleep 0.3
-  echo "$ portres get -n 3"
-  portres get -n 3 -d /tmp/portres-demo
-  sleep 1
+  # Step 4: Get port with specific tag
+  echo ""
+  echo "# Step 4: Get port with tag"
+  sleep 0.5
+  echo "$ portres get --tag \"api-server\""
+  sleep 0.5
+  PORT2=$(portres get --tag "api-server")
+  echo "$PORT2"
+  sleep 2
 
-  echo
-  echo "3. Get port with tag:"
-  sleep 0.3
-  echo "$ portres get -t mytest --json"
-  portres get -t mytest --json -d /tmp/portres-demo
-  sleep 1
+  # Step 5: Get port within range
+  echo ""
+  echo "# Step 5: Get port within range (8000-9000)"
+  sleep 0.5
+  echo "$ portres get --min 8000 --max 9000 --tag \"web-server\""
+  sleep 0.5
+  PORT3=$(portres get --min 8000 --max 9000 --tag "web-server")
+  echo "$PORT3"
+  sleep 2
 
-  echo
-  echo "4. List all allocations:"
-  sleep 0.3
+  # Step 6: Reserve specific port
+  echo ""
+  echo "# Step 6: Reserve specific port"
+  sleep 0.5
+  echo "$ portres reserve --port 3000 --tag \"main-app\""
+  sleep 0.5
+  portres reserve --port 3000 --tag "main-app" || echo "Port 3000 reserved"
+  sleep 2
+
+  # Step 7: List all allocated ports
+  echo ""
+  echo "# Step 7: List all allocated ports"
+  sleep 0.5
   echo "$ portres list"
-  portres list -d /tmp/portres-demo
+  sleep 0.5
+  portres list
+  sleep 3
+
+  # Step 8: Cleanup
+  echo ""
+  echo "# Step 8: Cleanup all ports"
+  sleep 0.5
+  echo "$ portres cleanup"
+  portres cleanup
+  echo "✓ All ports released"
   sleep 1
 
-  echo
-  echo "5. Show registry status:"
-  sleep 0.3
-  echo "$ portres status"
-  portres status -d /tmp/portres-demo
-  sleep 1
-
-  echo
-  echo "6. Release all ports:"
-  sleep 0.3
-  echo "$ portres release-all"
-  portres release-all -d /tmp/portres-demo
-  sleep 1
-
-  echo
-  echo "7. Verify registry is empty:"
-  sleep 0.3
-  echo "$ portres list"
-  portres list -d /tmp/portres-demo
-  sleep 1
-
-  echo
-  echo "====================================="
-  echo "Zero dependencies. Concurrent safe."
-  echo "====================================="
+  echo ""
+  echo "# Done! Allocate test ports with: portres get"
   sleep 1
 }
 
