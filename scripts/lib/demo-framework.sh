@@ -34,18 +34,18 @@ fi
 REPO_ROOT="$(cd "$_DEMO_CALLER_DIR/.." && pwd)"
 
 setup_tool_dir() {
-  # Try tools/ subdirectory first (git submodules location)
-  TOOL_DIR="$REPO_ROOT/tools/$TOOL_NAME"
-  if [ ! -d "$TOOL_DIR" ]; then
-    # Fallback: tool at repo root (legacy or special cases)
+  # Check if we're in meta repo (has tools/ subdirectory) or standalone repo
+  if [ -d "$REPO_ROOT/tools/$TOOL_NAME" ]; then
+    # Meta repo: tool is in tools/ subdirectory
+    TOOL_DIR="$REPO_ROOT/tools/$TOOL_NAME"
+  elif [ -d "$REPO_ROOT/$TOOL_NAME" ]; then
+    # Legacy: tool at repo root
     TOOL_DIR="$REPO_ROOT/$TOOL_NAME"
+  else
+    # Standalone repo: we ARE the tool directory
+    TOOL_DIR="$REPO_ROOT"
   fi
-  if [ ! -d "$TOOL_DIR" ]; then
-    echo "ERROR: Tool directory not found for $TOOL_NAME"
-    echo "  Tried: $REPO_ROOT/tools/$TOOL_NAME"
-    echo "  Tried: $REPO_ROOT/$TOOL_NAME"
-    exit 1
-  fi
+
   DEMO_FILE="$TOOL_DIR/demo.cast"
   DEMO_URL_FILE="$TOOL_DIR/demo-url.txt"
   DEMO_GIF="$TOOL_DIR/docs/demo.gif"
