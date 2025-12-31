@@ -252,7 +252,7 @@ See [DOGFOODING_STRATEGY.md](./DOGFOODING_STRATEGY.md) for the full composition 
 
 ![Demo](docs/demo.gif)
 
-**[▶ View interactive recording on asciinema.org](#)**
+**[▶ View interactive recording on asciinema.org](https://asciinema.org/a/oSg2LQQuexnWqmNSdZpuCL6pX)**
 
 > Try it online: [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/tuulbelt/port-resolver)
 
