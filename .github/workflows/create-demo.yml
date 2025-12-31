@@ -95,8 +95,7 @@ jobs:
         if: steps.check-demo.outputs.needs_demo == 'true'
         run: |
           if [ -f demo-url.txt ]; then
-            ASCIINEMA_URL=$(cat demo-url.txt | tr -d '
-')
+            ASCIINEMA_URL=$(cat demo-url.txt | tr -d '\n')
             # Update README: replace markdown placeholder link with actual URL
             sed -i "s|(#)|($ASCIINEMA_URL)|g" README.md
             echo "✓ Updated README with asciinema URL: $ASCIINEMA_URL"
