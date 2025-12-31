@@ -91,6 +91,19 @@ jobs:
         run: |
           bash scripts/record-demo.sh
 
+      - name: Update README with asciinema URL
+        if: steps.check-demo.outputs.needs_demo == 'true'
+        run: |
+          if [ -f demo-url.txt ]; then
+            ASCIINEMA_URL=$(cat demo-url.txt | tr -d '
+')
+            # Update README: replace href="#" with actual URL
+            sed -i "s|href=\"#\"|href=\"$ASCIINEMA_URL\"|g" README.md
+            echo "✓ Updated README with asciinema URL: $ASCIINEMA_URL"
+          else
+            echo "⊘ No demo-url.txt found, skipping README update"
+          fi
+
       - name: Commit demo files
         if: steps.check-demo.outputs.needs_demo == 'true'
         run: |
