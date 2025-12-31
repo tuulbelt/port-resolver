@@ -4,13 +4,15 @@ on:
   # Triggered manually or by meta repo
   workflow_dispatch:
 
-  # Auto-trigger when implementation changes
+  # Auto-trigger when implementation changes OR demo scripts change
   push:
     branches:
       - main
     paths:
       - 'src/**'
       - 'lib/**'
+      - 'scripts/record-demo.sh'
+      - 'scripts/lib/demo-framework.sh'
 
 # Cancel in-progress runs
 concurrency:
