@@ -4,15 +4,10 @@ on:
   # Triggered manually or by meta repo
   workflow_dispatch:
 
-  # Auto-trigger when implementation changes OR demo scripts change
+  # Auto-trigger on any push to check if demo is needed
   push:
     branches:
       - main
-    paths:
-      - 'src/**'
-      - 'lib/**'
-      - 'scripts/record-demo.sh'
-      - 'scripts/lib/demo-framework.sh'
 
 # Cancel in-progress runs
 concurrency:
@@ -28,32 +23,76 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check if demo needs generation
+        id: check-demo
+        run: |
+          NEEDS_DEMO=false
+
+          # Check 1: Did implementation change (src/** or lib/**)?
+          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qE '^(src|lib)/'; then
+            echo "✓ Implementation changed (src/** or lib/**)"
+            NEEDS_DEMO=true
+          fi
+
+          # Check 2: Is demo.gif missing or a placeholder (43 bytes)?
+          if [ ! -f "docs/demo.gif" ]; then
+            echo "✓ Demo GIF missing"
+            NEEDS_DEMO=true
+          elif [ $(stat -f%z "docs/demo.gif" 2>/dev/null || stat -c%s "docs/demo.gif") -le 100 ]; then
+            echo "✓ Demo GIF is a placeholder ($(stat -f%z "docs/demo.gif" 2>/dev/null || stat -c%s "docs/demo.gif") bytes)"
+            NEEDS_DEMO=true
+          fi
+
+          # Check 3: Is demo-url.txt missing or empty?
+          if [ ! -f "demo-url.txt" ] || [ ! -s "demo-url.txt" ]; then
+            echo "✓ Demo URL missing or empty"
+            NEEDS_DEMO=true
+          fi
+
+          # Check 4: Does README have placeholder link "#"?
+          if grep -q 'href="#"' README.md 2>/dev/null; then
+            echo "✓ README has placeholder demo link"
+            NEEDS_DEMO=true
+          fi
+
+          if [ "$NEEDS_DEMO" = "false" ]; then
+            echo "✗ Demo is up to date, skipping generation"
+          fi
+
+          echo "needs_demo=$NEEDS_DEMO" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
+        if: steps.check-demo.outputs.needs_demo == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install dependencies
+        if: steps.check-demo.outputs.needs_demo == 'true'
         run: npm install
 
       - name: Install asciinema
+        if: steps.check-demo.outputs.needs_demo == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y asciinema
 
       - name: Install agg (asciinema GIF generator)
+        if: steps.check-demo.outputs.needs_demo == 'true'
         run: |
           if ! command -v agg &> /dev/null; then
             cargo install --git https://github.com/asciinema/agg
           fi
 
       - name: Record demo
+        if: steps.check-demo.outputs.needs_demo == 'true'
         env:
           ASCIINEMA_INSTALL_ID: ${{ secrets.ASCIINEMA_INSTALL_ID }}
         run: |
           bash scripts/record-demo.sh
 
       - name: Commit demo files
+        if: steps.check-demo.outputs.needs_demo == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
