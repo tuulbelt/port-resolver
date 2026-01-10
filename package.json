@@ -1,6 +1,6 @@
 {
   "name": "@tuulbelt/port-resolver",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Concurrent port allocation for any application - avoid port conflicts in tests, servers, microservices, and development environments",
   "main": "src/index.ts",
   "type": "module",
@@ -10,8 +10,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/index.test.ts",
-    "test:watch": "node --import tsx --test --watch test/index.test.ts",
+    "test": "node --import tsx --test test/index.test.ts test/new-apis.test.ts test/range-apis.test.ts",
+    "test:watch": "node --import tsx --test --watch test/index.test.ts test/new-apis.test.ts test/range-apis.test.ts",
     "bench": "node --import tsx benchmarks/index.bench.ts",
     "dogfood": "npm run dogfood:flaky && npm run dogfood:semaphore",
     "dogfood:flaky": "flaky --test 'npm test' --runs 10",
