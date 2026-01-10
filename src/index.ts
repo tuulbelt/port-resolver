@@ -786,7 +786,8 @@ export class PortManager {
     const result = await this.resolver.getMultiple(count, { tag });
     if (result.ok) {
       for (const alloc of result.value) {
-        const key = alloc.tag || `port-${alloc.port}`;
+        // Use port number as key to ensure uniqueness (tag may be shared)
+        const key = `port-${alloc.port}`;
         this.allocations.set(key, alloc);
       }
     }
