@@ -1,0 +1,17 @@
+{
+  "name": "port-resolver-benchmarks",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Performance benchmarks for port-resolver",
+  "scripts": {
+    "bench": "node --import tsx index.bench.ts",
+    "bench:compare": "node --import tsx index.bench.ts && node --import tsx competitors/get-port.bench.ts && node --import tsx competitors/detect-port.bench.ts"
+  },
+  "devDependencies": {
+    "tatami-ng": "^0.8.18",
+    "tsx": "^4.19.2",
+    "get-port": "^7.1.0",
+    "detect-port": "^1.6.1"
+  }
+}

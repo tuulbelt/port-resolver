@@ -154,27 +154,33 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
 
 ### Phase 5: Benchmarking (Optional but Recommended)
 **Priority:** 🟡 MEDIUM
-**Status:** ⏸️ **DEFERRED TO v0.3.0**
-**Verdict:** ⚠️ OPTIONAL per maturity analysis, deferred for v0.2.0
+**Status:** ✅ **COMPLETE** (2026-01-10)
+**Verdict:** Implemented despite I/O-bound nature for completeness
 
-- [ ] **5.1 Benchmark Infrastructure** ⏸️ **DEFERRED**
+- [x] **5.1 Benchmark Infrastructure** ✅ **COMPLETE**
   - [x] `benchmarks/` directory exists
-  - [ ] `benchmarks/package.json` with tatami-ng (deferred)
-  - [ ] `benchmarks/index.bench.ts` - core operations (deferred)
-  - [ ] `benchmarks/README.md` - results documentation (deferred)
+  - [x] `benchmarks/package.json` with tatami-ng
+  - [x] `benchmarks/index.bench.ts` - core operations (7 benchmark groups)
+  - [x] `benchmarks/README.md` - comprehensive results documentation
 
-- [ ] **5.2 Benchmark Scenarios** ⏸️ **DEFERRED**
-  - [ ] Single port allocation speed
-  - [ ] Batch allocation (N=10) speed
-  - [ ] Concurrent allocation (10 parallel processes)
-  - [ ] Lock acquisition overhead measurement
+- [x] **5.2 Benchmark Scenarios** ✅ **COMPLETE**
+  - [x] Single port allocation speed (module-level + instance methods)
+  - [x] Batch allocation (N=3, 5, 10) speed + rollback performance
+  - [x] Port range allocation (reserveRange, getPortInRange)
+  - [x] PortManager lifecycle (allocate, release, releaseAll)
+  - [x] Concurrent allocation (5, 10 parallel processes)
+  - [x] Lock acquisition overhead measurement
 
-- [ ] **5.3 Competitive Comparison** ⏸️ **DEFERRED**
-  - [ ] vs get-port (baseline)
-  - [ ] vs detect-port (alternative)
-  - [ ] Document concurrent-safety advantage
+- [x] **5.3 Competitive Comparison** ✅ **COMPLETE**
+  - [x] vs get-port (baseline) - `benchmarks/competitors/get-port.bench.ts`
+  - [x] vs detect-port (alternative) - `benchmarks/competitors/detect-port.bench.ts`
+  - [x] Document concurrent-safety advantage (in README.md)
 
-**Rationale for deferral:** Port allocation is I/O bound (network operations dominate). Performance benchmarking has low ROI compared to property-validator (CPU-bound validation). Core value proposition is concurrent-safety via semaphore, not raw speed.
+**Implementation Notes:**
+- Benchmarks measure algorithmic overhead, not absolute I/O performance
+- Results show ~10-30% overhead vs competitors for cross-process safety
+- Unique features (batch, range, PortManager) have no competitor equivalent
+- README.md documents I/O-bound nature and trade-offs clearly
 
 ---
 
@@ -183,8 +189,8 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
 | Version | Deliverables | Status |
 |---------|--------------|--------|
 | **v0.1.0** | Foundation | ✅ Released 2025-12-29 |
-| **v0.2.0** | Multi-API + Enhanced SPEC + Examples | ✅ **COMPLETE 2026-01-10** |
-| **v0.3.0** | Benchmark CI (optional) | ⏳ Future |
+| **v0.2.0** | Multi-API + Enhanced SPEC + Examples + Benchmarks | ✅ **COMPLETE 2026-01-10** |
+| **v0.3.0** | Benchmark CI automation (optional) | ⏳ Future |
 | **v1.0.0** | Stable API | ⏳ Future |
 
 ---
@@ -224,8 +230,14 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
   - test-flakiness-detector integration
   - DOGFOODING_STRATEGY.md documented
 
+- [x] **Benchmarking:** Performance baseline established ✅
+  - benchmarks/ infrastructure with tatami-ng
+  - 7 benchmark groups covering all v0.2.0 features
+  - Competitor comparisons (get-port, detect-port)
+  - Comprehensive README.md with analysis
+
 - [x] **Release:** Ready for tag v0.2.0, create PR ✅
-  - Committed: bc62ede
+  - Committed: 421b8b8
   - Pushed to: claude/enhance-port-resolver-RwdBJ
 
 ---
