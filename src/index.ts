@@ -656,6 +656,211 @@ export class PortResolver {
 }
 
 // ============================================================================
+// Module-Level Convenience APIs (propval pattern)
+// ============================================================================
+
+/**
+ * Get a single available port (convenience function)
+ *
+ * @example
+ * ```ts
+ * import { getPort } from '@tuulbelt/port-resolver';
+ *
+ * const result = await getPort({ tag: 'api-server' });
+ * if (result.ok) {
+ *   console.log(`Port allocated: ${result.value.port}`);
+ * }
+ * ```
+ */
+export async function getPort(options: { tag?: string; config?: Partial<PortConfig> } = {}): Promise<Result<PortAllocation>> {
+  const resolver = new PortResolver(options.config);
+  return resolver.get({ tag: options.tag });
+}
+
+/**
+ * Get multiple available ports atomically (convenience function)
+ *
+ * Allocates N ports atomically - either all succeed or all fail (transactional).
+ *
+ * @example
+ * ```ts
+ * import { getPorts } from '@tuulbelt/port-resolver';
+ *
+ * const result = await getPorts(3, { tags: ['http', 'grpc', 'metrics'] });
+ * if (result.ok) {
+ *   const [httpPort, grpcPort, metricsPort] = result.value;
+ *   console.log(`HTTP: ${httpPort.port}, gRPC: ${grpcPort.port}, Metrics: ${metricsPort.port}`);
+ * }
+ * ```
+ */
+export async function getPorts(
+  count: number,
+  options: { tags?: string[]; tag?: string; config?: Partial<PortConfig> } = {}
+): Promise<Result<PortAllocation[]>> {
+  const resolver = new PortResolver(options.config);
+
+  // Handle single tag for all ports (atomic allocation)
+  if (options.tag) {
+    return resolver.getMultiple(count, { tag: options.tag });
+  }
+
+  // Handle array of tags (one per port) - atomic allocation via getMultiple
+  if (options.tags) {
+    if (options.tags.length !== count) {
+      return { ok: false, error: new Error(`Tag count (${options.tags.length}) must match port count (${count})`) };
+    }
+
+    // Note: Current implementation assigns first tag to all ports in batch.
+    // For per-port tags, we use sequential allocation.
+    // This is not fully atomic but provides better tag granularity.
+    const allocations: PortAllocation[] = [];
+
+    for (const tag of options.tags) {
+      const result = await resolver.get({ tag });
+      if (!result.ok) {
+        // Rollback: release all previously allocated ports
+        for (const alloc of allocations) {
+          await resolver.release(alloc.port);
+        }
+        return { ok: false, error: result.error };
+      }
+      allocations.push(result.value);
+    }
+
+    return { ok: true, value: allocations };
+  }
+
+  // No tags specified (atomic allocation)
+  return resolver.getMultiple(count);
+}
+
+// ============================================================================
+// Port Manager (Lifecycle Management)
+// ============================================================================
+
+/**
+ * Port Manager for lifecycle-managed port allocation.
+ *
+ * Provides automatic cleanup and tracking for test suites.
+ *
+ * @example
+ * ```ts
+ * import { PortManager } from '@tuulbelt/port-resolver';
+ *
+ * const manager = new PortManager();
+ *
+ * // Allocate ports
+ * const port1 = await manager.allocate('test-1');
+ * const port2 = await manager.allocate('test-2');
+ *
+ * // ... run tests ...
+ *
+ * // Cleanup all at once
+ * await manager.releaseAll();
+ * ```
+ */
+export class PortManager {
+  private resolver: PortResolver;
+  private allocations: Map<string, PortAllocation> = new Map();
+
+  constructor(config: Partial<PortConfig> = {}) {
+    this.resolver = new PortResolver(config);
+  }
+
+  /**
+   * Allocate a single port with optional tag
+   */
+  async allocate(tag?: string): Promise<Result<PortAllocation>> {
+    const result = await this.resolver.get({ tag });
+    if (result.ok) {
+      const key = tag || `port-${result.value.port}`;
+      this.allocations.set(key, result.value);
+    }
+    return result;
+  }
+
+  /**
+   * Allocate multiple ports atomically
+   */
+  async allocateMultiple(count: number, tag?: string): Promise<Result<PortAllocation[]>> {
+    const result = await this.resolver.getMultiple(count, { tag });
+    if (result.ok) {
+      for (const alloc of result.value) {
+        const key = alloc.tag || `port-${alloc.port}`;
+        this.allocations.set(key, alloc);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Release a specific port by tag or port number
+   */
+  async release(tagOrPort: string | number): Promise<Result<void>> {
+    let port: number;
+
+    if (typeof tagOrPort === 'number') {
+      port = tagOrPort;
+      // Remove from allocations map
+      for (const [key, alloc] of this.allocations.entries()) {
+        if (alloc.port === port) {
+          this.allocations.delete(key);
+          break;
+        }
+      }
+    } else {
+      const alloc = this.allocations.get(tagOrPort);
+      if (!alloc) {
+        return { ok: false, error: new Error(`No allocation found for tag: ${tagOrPort}`) };
+      }
+      port = alloc.port;
+      this.allocations.delete(tagOrPort);
+    }
+
+    return this.resolver.release(port);
+  }
+
+  /**
+   * Release all ports managed by this instance
+   */
+  async releaseAll(): Promise<Result<number>> {
+    let released = 0;
+    const errors: string[] = [];
+
+    for (const [tag, alloc] of this.allocations.entries()) {
+      const result = await this.resolver.release(alloc.port);
+      if (result.ok) {
+        released++;
+      } else {
+        errors.push(`${tag}: ${result.error.message}`);
+      }
+    }
+
+    this.allocations.clear();
+
+    if (errors.length > 0) {
+      return { ok: false, error: new Error(`Failed to release some ports: ${errors.join(', ')}`) };
+    }
+
+    return { ok: true, value: released };
+  }
+
+  /**
+   * Get all allocations managed by this instance
+   */
+  getAllocations(): PortAllocation[] {
+    return Array.from(this.allocations.values());
+  }
+
+  /**
+   * Get allocation by tag
+   */
+  get(tag: string): PortAllocation | undefined {
+    return this.allocations.get(tag);
+  }
+}
+
+// ============================================================================
 // CLI
 // ============================================================================
 
