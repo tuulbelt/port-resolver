@@ -21,22 +21,25 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
 **Priority:** 🔴 HIGH
 **Target:** Match propval's multi-API design pattern
 
-- [ ] **1.1 Batch Allocation API** (CRITICAL)
-  - [ ] Library: `getPorts(count, options)` - allocate N ports atomically
-  - [ ] Library: Return all ports or fail entirely (transactional)
-  - [ ] CLI: `portres batch --count 3 --tags "http,grpc,metrics"`
-  - [ ] Tests: Concurrent batch allocation safety
-  - [ ] Tests: Transaction rollback on partial failure
+- [x] **1.1 Batch Allocation API** (CRITICAL) ✅ **COMPLETED 2026-01-10**
+  - [x] Library: `getPorts(count, options)` - allocate N ports atomically
+  - [x] Library: Return all ports or fail entirely (transactional)
+  - [x] Library: Support per-port tags with rollback
+  - [ ] CLI: `portres batch --count 3 --tags "http,grpc,metrics"` (pending)
+  - [ ] Tests: Concurrent batch allocation safety (pending)
+  - [ ] Tests: Transaction rollback on partial failure (pending)
 
-- [ ] **1.2 Port Manager API** (HIGH)
-  - [ ] Library: `new PortManager({ baseDir })` - lifecycle management
-  - [ ] Library: `manager.allocate(tag)` - single allocation
-  - [ ] Library: `manager.releaseAll()` - cleanup all ports
-  - [ ] CLI: `portres manager create --base-dir /tmp/ports`
-  - [ ] CLI: `portres manager allocate --tag test-1`
-  - [ ] CLI: `portres manager cleanup`
-  - [ ] Tests: Manager lifecycle tests
-  - [ ] Tests: Auto-cleanup on process exit
+- [x] **1.2 Port Manager API** (HIGH) ✅ **COMPLETED 2026-01-10**
+  - [x] Library: `new PortManager({ config })` - lifecycle management
+  - [x] Library: `manager.allocate(tag)` - single allocation
+  - [x] Library: `manager.allocateMultiple(count, tag)` - batch allocation
+  - [x] Library: `manager.release(tagOrPort)` - release by tag or port
+  - [x] Library: `manager.releaseAll()` - cleanup all ports
+  - [x] Library: `manager.getAllocations()` - get tracked allocations
+  - [x] Library: `manager.get(tag)` - lookup allocation by tag
+  - [ ] CLI: `portres manager` commands (future enhancement)
+  - [ ] Tests: Manager lifecycle tests (pending)
+  - [ ] Tests: Auto-cleanup on process exit (pending)
 
 - [ ] **1.3 Port Range API** (MEDIUM)
   - [ ] Library: `reserveRange({ start, count })` - reserve contiguous range
