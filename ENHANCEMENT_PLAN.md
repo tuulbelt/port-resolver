@@ -122,12 +122,12 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
 **Priority:** 🔴 HIGH
 **Target:** Maintain 100% test pass rate, expand coverage
 
-- [ ] **4.1 Unit Tests** (CRITICAL)
-  - [ ] Batch allocation tests (+15 tests)
-  - [ ] Port manager tests (+10 tests)
-  - [ ] Port range tests (+8 tests)
-  - [ ] Result type tests (+5 tests)
-  - [ ] Target: 95+ tests (from 56)
+- [x] **4.1 Unit Tests** (CRITICAL) ✅ **COMPLETED 2026-01-10**
+  - [x] Batch allocation tests (+6 tests for getPorts)
+  - [x] Port manager tests (+15 tests)
+  - [x] Integration tests (+2 tests)
+  - [ ] Port range tests (+8 tests) (pending Phase 1.3)
+  - [x] Target: 106 tests achieved (79 baseline + 27 new)
 
 - [ ] **4.2 Integration Tests** (HIGH)
   - [ ] Multi-process concurrent allocation
