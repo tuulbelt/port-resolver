@@ -653,6 +653,181 @@ export class PortResolver {
       lock.release();
     }
   }
+
+  /**
+   * Reserve a contiguous range of ports starting from a specific port
+   *
+   * @example
+   * ```ts
+   * const result = await resolver.reserveRange({ start: 50000, count: 5, tag: 'cluster' });
+   * if (result.ok) {
+   *   console.log(`Reserved ports: ${result.value.map(a => a.port).join(', ')}`);
+   *   // Output: Reserved ports: 50000, 50001, 50002, 50003, 50004
+   * }
+   * ```
+   */
+  async reserveRange(options: { start: number; count: number; tag?: string }): Promise<Result<PortAllocation[]>> {
+    const { start, count, tag } = options;
+
+    // Validate inputs
+    if (count < 1) {
+      return { ok: false, error: new Error('Count must be at least 1') };
+    }
+    if (count > this.config.maxPortsPerRequest) {
+      return { ok: false, error: new Error(`Count exceeds maximum (${this.config.maxPortsPerRequest})`) };
+    }
+    if (start < 1 || start > 65535) {
+      return { ok: false, error: new Error('Start port must be between 1 and 65535') };
+    }
+    if (start + count - 1 > 65535) {
+      return { ok: false, error: new Error('Port range exceeds maximum (65535)') };
+    }
+    if (!this.config.allowPrivileged && start < 1024) {
+      return { ok: false, error: new Error('Cannot reserve privileged ports (< 1024) without allowPrivileged flag') };
+    }
+
+    const lock = await this.acquireLock();
+
+    try {
+      // Read registry
+      const registryResult = readRegistry(this.config);
+      if (!registryResult.ok) {
+        return { ok: false, error: registryResult.error };
+      }
+
+      const registry = registryResult.value;
+
+      // Clean stale entries
+      const { active } = filterStaleEntries(registry.entries, this.config.staleTimeout);
+      registry.entries = active;
+
+      // Check registry size limit
+      if (registry.entries.length + count > this.config.maxRegistrySize) {
+        return { ok: false, error: new Error('Registry size limit exceeded') };
+      }
+
+      // Get already allocated ports
+      const allocatedPorts = new Set(registry.entries.map(e => e.port));
+
+      // Check if all ports in range are available
+      const requestedPorts: number[] = [];
+      for (let i = 0; i < count; i++) {
+        const port = start + i;
+        if (allocatedPorts.has(port)) {
+          return { ok: false, error: new Error(`Port ${port} in range is already allocated`) };
+        }
+
+        // Check if port is actually available on the network
+        const available = await isPortAvailable(port);
+        if (!available) {
+          return { ok: false, error: new Error(`Port ${port} in range is in use`) };
+        }
+
+        requestedPorts.push(port);
+      }
+
+      // Allocate all ports in range
+      const allocations: PortAllocation[] = [];
+      const pid = process.pid;
+      const timestamp = Date.now();
+      const safeTag = sanitizeTag(tag);
+
+      for (const port of requestedPorts) {
+        const entry: PortEntry = { port, pid, timestamp, tag: safeTag };
+        registry.entries.push(entry);
+        allocations.push({ port, tag: safeTag });
+      }
+
+      // Write registry
+      const writeResult = writeRegistry(this.config, registry);
+      if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error };
+      }
+
+      return { ok: true, value: allocations };
+    } finally {
+      lock.release();
+    }
+  }
+
+  /**
+   * Get any available port within a specific range
+   *
+   * @example
+   * ```ts
+   * const result = await resolver.getPortInRange({ min: 50000, max: 50100, tag: 'api' });
+   * if (result.ok) {
+   *   console.log(`Port allocated: ${result.value.port}`);
+   * }
+   * ```
+   */
+  async getPortInRange(options: { min: number; max: number; tag?: string }): Promise<Result<PortAllocation>> {
+    const { min, max, tag } = options;
+
+    // Validate inputs
+    if (min < 1 || min > 65535) {
+      return { ok: false, error: new Error('Min port must be between 1 and 65535') };
+    }
+    if (max < 1 || max > 65535) {
+      return { ok: false, error: new Error('Max port must be between 1 and 65535') };
+    }
+    if (min > max) {
+      return { ok: false, error: new Error('Min port must be less than or equal to max port') };
+    }
+    if (!this.config.allowPrivileged && min < 1024) {
+      return { ok: false, error: new Error('Cannot allocate privileged ports (< 1024) without allowPrivileged flag') };
+    }
+
+    const lock = await this.acquireLock();
+
+    try {
+      // Read registry
+      const registryResult = readRegistry(this.config);
+      if (!registryResult.ok) {
+        return { ok: false, error: registryResult.error };
+      }
+
+      const registry = registryResult.value;
+
+      // Clean stale entries
+      const { active } = filterStaleEntries(registry.entries, this.config.staleTimeout);
+      registry.entries = active;
+
+      // Check registry size limit
+      if (registry.entries.length + 1 > this.config.maxRegistrySize) {
+        return { ok: false, error: new Error('Registry size limit exceeded') };
+      }
+
+      // Get already allocated ports
+      const allocatedPorts = new Set(registry.entries.map(e => e.port));
+
+      // Find available port in range using custom config
+      const rangeConfig = { ...this.config, minPort: min, maxPort: max };
+      const portResult = await findAvailablePort(rangeConfig, allocatedPorts);
+      if (!portResult.ok) {
+        return { ok: false, error: portResult.error };
+      }
+
+      const port = portResult.value;
+      const pid = process.pid;
+      const timestamp = Date.now();
+      const safeTag = sanitizeTag(tag);
+
+      // Add to registry
+      const entry: PortEntry = { port, pid, timestamp, tag: safeTag };
+      registry.entries.push(entry);
+
+      // Write registry
+      const writeResult = writeRegistry(this.config, registry);
+      if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error };
+      }
+
+      return { ok: true, value: { port, tag: safeTag } };
+    } finally {
+      lock.release();
+    }
+  }
 }
 
 // ============================================================================
@@ -933,37 +1108,41 @@ USAGE:
   portres <command> [options]
 
 COMMANDS:
-  get           Get an available port
-  release <port> Release a previously allocated port
-  release-all   Release all ports owned by current process
-  list          List all port allocations
-  clean         Remove stale entries from registry
-  status        Show registry status
-  clear         Clear the entire registry
+  get                   Get an available port
+  release <port>        Release a previously allocated port
+  release-all           Release all ports owned by current process
+  list                  List all port allocations
+  clean                 Remove stale entries from registry
+  status                Show registry status
+  clear                 Clear the entire registry
+  reserve-range         Reserve a contiguous range of ports
+  get-in-range          Get any available port within a specific range
 
 OPTIONS:
   -n, --count <n>       Number of ports to allocate (default: 1)
   -t, --tag <tag>       Tag for the allocation
-  -p, --port <port>     Port number (for release)
+  -p, --port <port>     Port number (for release or reserve-range start)
   -j, --json            Output in JSON format
   -v, --verbose         Verbose output
-  --min-port <port>     Minimum port number (default: 49152)
-  --max-port <port>     Maximum port number (default: 65535)
+  --min-port <port>     Minimum port number (default: 49152, also for get-in-range)
+  --max-port <port>     Maximum port number (default: 65535, also for get-in-range)
   -d, --registry-dir <dir>  Registry directory (default: ~/.portres/)
   --allow-privileged    Allow ports < 1024 (requires root)
   -h, --help            Show this help
   -V, --version         Show version
 
 EXAMPLES:
-  portres get                    # Get one available port
-  portres get -n 3               # Get 3 available ports
-  portres get -t mytest          # Get port with tag
-  portres release 50000          # Release port 50000
-  portres release-all            # Release all ports for this process
-  portres list                   # List all allocations
-  portres list --json            # List in JSON format
-  portres clean                  # Remove stale entries
-  portres status                 # Show registry status
+  portres get                          # Get one available port
+  portres get -n 3                     # Get 3 available ports
+  portres get -t mytest                # Get port with tag
+  portres reserve-range -p 50000 -n 5  # Reserve ports 50000-50004
+  portres get-in-range --min-port 50000 --max-port 50100  # Get port in range
+  portres release 50000                # Release port 50000
+  portres release-all                  # Release all ports for this process
+  portres list                         # List all allocations
+  portres list --json                  # List in JSON format
+  portres clean                        # Remove stale entries
+  portres status                       # Show registry status
 `);
 }
 
@@ -1120,6 +1299,43 @@ async function main(): Promise<void> {
           console.log(JSON.stringify({ cleared: true }));
         } else {
           console.log('Registry cleared');
+        }
+        break;
+      }
+
+      case 'reserve-range': {
+        if (args.port === undefined || isNaN(args.port)) {
+          console.error('Error: Start port required (use --port or -p)');
+          process.exit(1);
+        }
+        const count = args.count ?? 1;
+        const result = await resolver.reserveRange({ start: args.port, count, tag: args.tag });
+        if (!result.ok) {
+          console.error(`Error: ${result.error.message}`);
+          process.exit(1);
+        }
+        if (args.json) {
+          console.log(JSON.stringify(result.value, null, 2));
+        } else {
+          console.log(result.value.map(a => a.port).join('\n'));
+        }
+        break;
+      }
+
+      case 'get-in-range': {
+        if (args.minPort === undefined || args.maxPort === undefined) {
+          console.error('Error: Both --min-port and --max-port required');
+          process.exit(1);
+        }
+        const result = await resolver.getPortInRange({ min: args.minPort, max: args.maxPort, tag: args.tag });
+        if (!result.ok) {
+          console.error(`Error: ${result.error.message}`);
+          process.exit(1);
+        }
+        if (args.json) {
+          console.log(JSON.stringify(result.value, null, 2));
+        } else {
+          console.log(result.value.port);
         }
         break;
       }
