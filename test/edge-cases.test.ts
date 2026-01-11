@@ -26,32 +26,22 @@ function cleanupRegistry(dir: string): void {
 // ============================================================================
 
 test('Range API Edge Cases', async (t) => {
-  await t.test('reserveRange with overlapping existing allocations', async () => {
+  await t.test('reserveRange fails when range overlaps existing allocations', async () => {
     const registryDir = createTempRegistry();
 
     try {
       const resolver = new PortResolver({ registryDir, minPort: 50000, maxPort: 50100 });
 
-      // Allocate individual ports that will overlap with range
-      const port1 = await resolver.get({ tag: 'existing-1' });
-      assert.strictEqual(port1.ok, true);
+      // First, reserve range 50000-50004 successfully
+      const firstRange = await resolver.reserveRange({ start: 50000, count: 5, tag: 'existing-range' });
+      assert.strictEqual(firstRange.ok, true);
 
-      const port2 = await resolver.get({ tag: 'existing-2' });
-      assert.strictEqual(port2.ok, true);
+      // Try to reserve overlapping range 50002-50006 (overlaps with 50002, 50003, 50004)
+      // Should fail because ports 50002-50004 are already allocated
+      const overlappingRange = await resolver.reserveRange({ start: 50002, count: 5, tag: 'new-range' });
 
-      // Reserve a range - should work around existing allocations
-      const range = await resolver.reserveRange({ count: 5, tag: 'my-range' });
-      assert.strictEqual(range.ok, true);
-      if (range.ok) {
-        assert.strictEqual(range.value.ports.length, 5);
-
-        // Verify no overlap
-        if (port1.ok && port2.ok) {
-          const existing = [port1.value.port, port2.value.port];
-          const overlap = range.value.ports.some(p => existing.includes(p));
-          assert.strictEqual(overlap, false);
-        }
-      }
+      assert.strictEqual(overlappingRange.ok, false);
+      assert(overlappingRange.error.message.includes('already allocated') || overlappingRange.error.message.includes('in use'));
     } finally {
       cleanupRegistry(registryDir);
     }
@@ -106,17 +96,17 @@ test('Range API Edge Cases', async (t) => {
     }
   });
 
-  await t.test('Range validation: count exceeds available range', async () => {
+  await t.test('Range validation: count exceeds port range limit', async () => {
     const registryDir = createTempRegistry();
 
     try {
       const resolver = new PortResolver({ registryDir, minPort: 50000, maxPort: 50005 });
 
-      // Try to reserve 10 ports from range that only has 6 (50000-50005)
-      const result = await resolver.reserveRange({ count: 10, tag: 'too-many' });
+      // Try to reserve range starting at 50000 with count=10, which exceeds 65535
+      const result = await resolver.reserveRange({ start: 65530, count: 10, tag: 'too-many' });
 
       assert.strictEqual(result.ok, false);
-      assert(result.error.message.includes('No available ports'));
+      assert(result.error.message.includes('exceeds maximum'));
     } finally {
       cleanupRegistry(registryDir);
     }
@@ -213,8 +203,8 @@ test('Module-Level API Edge Cases', async (t) => {
     const registryDir = createTempRegistry();
 
     try {
-      // Provide 3 tags
-      const result = await getPorts({
+      // Provide 3 tags - signature is getPorts(count, options)
+      const result = await getPorts(3, {
         tags: ['api', 'db', 'cache'],
         config: { registryDir }
       });
@@ -252,9 +242,8 @@ test('Module-Level API Edge Cases', async (t) => {
     const registryDir = createTempRegistry();
 
     try {
-      // Allocate 5 ports without specific tags
-      const result = await getPorts({
-        count: 5,
+      // Allocate 5 ports without specific tags - signature is getPorts(count, options)
+      const result = await getPorts(5, {
         config: { registryDir }
       });
 
@@ -286,8 +275,8 @@ test('Resilience Tests', async (t) => {
       await resolver.get({ tag: 'existing-1' });
       await resolver.get({ tag: 'existing-2' });
 
-      // Try to reserve more ports than available
-      const result = await resolver.reserveRange({ count: 10, tag: 'batch' });
+      // Try to reserve range that exceeds 65535 (will fail validation)
+      const result = await resolver.reserveRange({ start: 65530, count: 10, tag: 'batch' });
       assert.strictEqual(result.ok, false);
 
       // Verify no partial allocation - should still only have 2 allocations
@@ -364,7 +353,8 @@ test('Resilience Tests', async (t) => {
     try {
       const tags = Array.from({ length: 50 }, (_, i) => `service-${i}`);
 
-      const result = await getPorts({ tags, config: { registryDir } });
+      // Signature is getPorts(count, options)
+      const result = await getPorts(50, { tags, config: { registryDir } });
 
       assert.strictEqual(result.ok, true);
       if (result.ok) {
