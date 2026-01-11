@@ -1,11 +1,12 @@
 {
   "name": "port-resolver-benchmarks",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Performance benchmarks for port-resolver",
   "scripts": {
     "bench": "node --import tsx index.bench.ts",
+    "bench:compare-api": "node --import tsx comparable-api.bench.ts",
     "bench:compare": "node --import tsx index.bench.ts && node --import tsx competitors/get-port.bench.ts && node --import tsx competitors/detect-port.bench.ts"
   },
   "devDependencies": {

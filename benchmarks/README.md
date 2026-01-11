@@ -1,7 +1,7 @@
 # Port Resolver Benchmark Results
 
-**Last Updated:** 2026-01-10
-**Tool Version:** v0.2.0
+**Last Updated:** 2026-01-11
+**Tool Version:** v0.3.0
 **Node.js:** v20.11.0+
 **Hardware:** Variable (CI runners)
 
@@ -43,6 +43,65 @@ Port-resolver provides **competitive performance** while offering **unique concu
 | **Port Reuse Tracking** | ✅ Tag-based registry | ❌ No | ❌ No |
 
 **Performance:** Similar to competitors for single allocations, with additional overhead for concurrent safety (~10-30% depending on operation).
+
+### v0.3.0 Tree-Shaking & Modularization
+
+Port-resolver v0.3.0 adds **8 entry points** for optimal tree-shaking:
+
+| Entry Point | Bundle Size (minified) | Use Case |
+|-------------|------------------------|----------|
+| Full API (default) | ~28 KB | Node.js backends, prototyping |
+| Core classes | ~17 KB (-40%) | PortResolver, PortManager only |
+| API functions | ~10 KB (-65%) | getPort, getPorts convenience APIs |
+| Utils | ~5 KB (-80%) | isPortAvailable, validatePath |
+| Types | 0 KB (-100%) | TypeScript type definitions only |
+
+**Key Insight:** For frontend apps, use specific entry points to reduce bundle size by 40-80%. For Node.js services, the full API is fine since bundle size doesn't matter.
+
+---
+
+## Benchmark Suites
+
+### Internal Benchmarks (`index.bench.ts`)
+
+Measures port-resolver's own API performance across all features.
+
+```bash
+npm run bench
+```
+
+### Comparable API Benchmarks (`comparable-api.bench.ts`)
+
+**NEW in v0.3.0:** Side-by-side comparison using equivalent operations.
+
+```bash
+npm run bench:compare-api
+```
+
+This benchmark ensures fair comparison by:
+- ✅ Benchmarking the SAME operation across libraries
+- ✅ Using equivalent features where available
+- ✅ Clearly marking port-resolver-exclusive features
+
+**What's comparable:**
+- Single port allocation
+- Port with preferred value
+- Concurrent allocation (5, 10 parallel)
+
+**What's NOT comparable (port-resolver exclusive):**
+- Cross-process concurrent safety (file-based semaphore)
+- Tag-based port tracking
+- Batch allocation with atomic rollback
+- Contiguous range reservation
+- Lifecycle management (PortManager)
+
+### Competitor Benchmarks (`competitors/*.bench.ts`)
+
+Separate benchmarks for get-port and detect-port showing their performance profiles.
+
+```bash
+npm run bench:compare  # Runs all benchmarks
+```
 
 ---
 
