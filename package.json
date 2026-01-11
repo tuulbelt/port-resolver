@@ -21,8 +21,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/index.test.ts test/new-apis.test.ts test/range-apis.test.ts test/edge-cases.test.ts test/utils.test.ts",
-    "test:watch": "node --import tsx --test --watch test/index.test.ts test/new-apis.test.ts test/range-apis.test.ts test/edge-cases.test.ts test/utils.test.ts",
+    "test": "node --import tsx --test test/port-resolver.test.ts test/port-manager.test.ts test/api.test.ts test/cli.test.ts test/range.test.ts test/utils.test.ts test/edge-cases.test.ts test/integration.test.ts",
+    "test:watch": "node --import tsx --test --watch test/port-resolver.test.ts test/port-manager.test.ts test/api.test.ts test/cli.test.ts test/range.test.ts test/utils.test.ts test/edge-cases.test.ts test/integration.test.ts",
     "bench": "node --import tsx benchmarks/index.bench.ts",
     "dogfood": "npm run dogfood:flaky && npm run dogfood:semaphore",
     "dogfood:flaky": "flaky --test 'npm test' --runs 10",
