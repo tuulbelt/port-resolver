@@ -949,9 +949,25 @@ export async function releasePort(options: {
       return { ok: true, value: undefined };
     }
 
-    return resolver.release(entry.port);
+    // Release the port, handling "not registered" error gracefully
+    const result = await resolver.release(entry.port);
+    if (!result.ok && result.error.message.includes('is not registered')) {
+      // Port was already released - idempotent behavior
+      return { ok: true, value: undefined };
+    }
+    return result;
   } else if (options.port !== undefined) {
-    return resolver.release(options.port);
+    // Release by port number with idempotent behavior
+    const result = await resolver.release(options.port);
+    if (!result.ok) {
+      // Handle idempotent cases: port not registered, invalid port number, etc.
+      // All these cases mean the port is effectively "not allocated", so return success
+      if (result.error.message.includes('is not registered') ||
+          result.error.message.includes('Invalid port number')) {
+        return { ok: true, value: undefined };
+      }
+    }
+    return result;
   }
 
   return { ok: false, error: new Error('Either tag or port must be provided') };
