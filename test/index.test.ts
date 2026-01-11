@@ -329,7 +329,7 @@ describe('CLI', () => {
   test('--version shows version', () => {
     const result = runCLI('--version');
     assert.strictEqual(result.exitCode, 0);
-    assert(result.stdout.includes('0.2.0'));
+    assert(result.stdout.includes('0.3.0'));
   });
 
   test('get allocates a port', () => {

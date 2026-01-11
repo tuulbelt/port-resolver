@@ -1,6 +1,6 @@
 {
   "name": "@tuulbelt/port-resolver",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Concurrent port allocation for any application - avoid port conflicts in tests, servers, microservices, and development environments",
   "main": "src/index.ts",
   "type": "module",

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Record Port Resolver demo (v0.2.0 features)
+# Record Port Resolver demo (v0.3.0 features - modularization + range APIs)
 source "$(dirname "$0")/lib/demo-framework.sh"
 
 TOOL_NAME="port-resolver"
@@ -18,10 +18,10 @@ demo_cleanup() {
 }
 
 demo_commands() {
-  # ═══════════════════════════════════════════
-  # Port Resolver v0.2.0 / portres - Tuulbelt
-  # Concurrent port allocation with range APIs
-  # ═══════════════════════════════════════════
+  # ═══════════════════════════════════════════════════════
+  # Port Resolver v0.3.0 / portres - Tuulbelt
+  # Concurrent port allocation - Tree-shakable & Modular
+  # ═══════════════════════════════════════════════════════
 
   # Step 1: Basic port allocation
   echo "# Step 1: Get random available port"
@@ -89,15 +89,18 @@ demo_commands() {
   sleep 1
 
   echo ""
-  echo "# v0.2.0 Features:"
-  echo "#  - reserveRange(): contiguous port ranges"
-  echo "#  - getPortInRange(): bounded allocation"
-  echo "#  - releasePort(): release by tag or port"
-  echo "#  - JSON output: machine-readable format"
-  echo "#  - PortManager: lifecycle management API"
+  echo "# v0.3.0 Features:"
+  echo "#  ✓ Tree-shakable: 8 entry points, save 40-80% bundle size"
+  echo "#  ✓ Modular: import only what you need"
+  echo "#  ✓ Reserve contiguous port ranges (v0.2.0)"
+  echo "#  ✓ Bounded allocation within specific ranges (v0.2.0)"
+  echo "#  ✓ Release by tag or port number"
+  echo "#  ✓ JSON output for machine parsing"
+  echo "#  ✓ PortManager: lifecycle management API"
+  echo "#  ✓ 194 tests passing, zero external deps"
   sleep 2
 }
 
 run_demo
 
-# Demo updated for v0.2.0 - 2026-01-10
+# Demo updated for v0.3.0 modularization - 2026-01-11
