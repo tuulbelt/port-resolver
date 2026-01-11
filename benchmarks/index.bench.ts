@@ -46,13 +46,13 @@ group('PortResolver Creation', () => {
 
   baseline('create: default options', () => {
     result = new PortResolver({
-      stateDir: tempDir,
+      registryDir: tempDir,
     });
   });
 
   bench('create: with range', () => {
     result = new PortResolver({
-      stateDir: tempDir,
+      registryDir: tempDir,
       minPort: 10000,
       maxPort: 20000,
     });
@@ -60,7 +60,7 @@ group('PortResolver Creation', () => {
 
   bench('create: with tag prefix', () => {
     result = new PortResolver({
-      stateDir: tempDir,
+      registryDir: tempDir,
       tagPrefix: 'bench-test',
     });
   });
@@ -73,18 +73,18 @@ group('Single Port Allocation', () => {
 
   baseline('getPort: module-level API', async () => {
     const tag = `tag-${counter++}`;
-    result = await getPort({ tag, config: { stateDir: tempDir } });
+    result = await getPort({ tag, config: { registryDir: tempDir } });
   });
 
   bench('get: via PortResolver instance', async () => {
-    const resolver = new PortResolver({ stateDir: tempDir });
+    const resolver = new PortResolver({ registryDir: tempDir });
     const tag = `tag-${counter++}`;
     result = await resolver.get({ tag });
   });
 
   bench('get: with specific range', async () => {
     const resolver = new PortResolver({
-      stateDir: tempDir,
+      registryDir: tempDir,
       minPort: 50000,
       maxPort: 60000
     });
@@ -100,23 +100,23 @@ group('Batch Port Allocation (v0.2.0)', () => {
 
   baseline('getPorts: 3 ports', async () => {
     const tags = [`batch-${counter++}`, `batch-${counter++}`, `batch-${counter++}`];
-    result = await getPorts(3, { tags, config: { stateDir: tempDir } });
+    result = await getPorts(3, { tags, config: { registryDir: tempDir } });
   });
 
   bench('getPorts: 5 ports', async () => {
     const tags = Array.from({ length: 5 }, () => `batch-${counter++}`);
-    result = await getPorts(5, { tags, config: { stateDir: tempDir } });
+    result = await getPorts(5, { tags, config: { registryDir: tempDir } });
   });
 
   bench('getPorts: 10 ports', async () => {
     const tags = Array.from({ length: 10 }, () => `batch-${counter++}`);
-    result = await getPorts(10, { tags, config: { stateDir: tempDir } });
+    result = await getPorts(10, { tags, config: { registryDir: tempDir } });
   });
 
   bench('getPorts: 3 ports (rollback on failure)', async () => {
     // This will fail due to range constraint, testing rollback performance
     result = await getPorts(3, {
-      config: { stateDir: tempDir, minPort: 50000, maxPort: 50001 }
+      config: { registryDir: tempDir, minPort: 50000, maxPort: 50001 }
     });
   });
 
@@ -125,7 +125,7 @@ group('Batch Port Allocation (v0.2.0)', () => {
 
 group('Port Range Allocation (v0.2.0)', () => {
   setup();
-  const resolver = new PortResolver({ stateDir: tempDir });
+  const resolver = new PortResolver({ registryDir: tempDir });
 
   baseline('reserveRange: 5 contiguous ports', async () => {
     const tag = `range-${counter++}`;
@@ -149,21 +149,21 @@ group('PortManager Lifecycle (v0.2.0)', () => {
   setup();
 
   baseline('manager: allocate single port', async () => {
-    const manager = new PortManager({ stateDir: tempDir });
+    const manager = new PortManager({ registryDir: tempDir });
     const tag = `mgr-${counter++}`;
     result = await manager.allocate(tag);
     await manager.releaseAll();
   });
 
   bench('manager: allocate + release by tag', async () => {
-    const manager = new PortManager({ stateDir: tempDir });
+    const manager = new PortManager({ registryDir: tempDir });
     const tag = `mgr-${counter++}`;
     await manager.allocate(tag);
     result = await manager.release(tag);
   });
 
   bench('manager: allocate multiple + releaseAll', async () => {
-    const manager = new PortManager({ stateDir: tempDir });
+    const manager = new PortManager({ registryDir: tempDir });
     await manager.allocate(`mgr-${counter++}`);
     await manager.allocate(`mgr-${counter++}`);
     await manager.allocate(`mgr-${counter++}`);
@@ -171,7 +171,7 @@ group('PortManager Lifecycle (v0.2.0)', () => {
   });
 
   bench('manager: get allocation by tag', async () => {
-    const manager = new PortManager({ stateDir: tempDir });
+    const manager = new PortManager({ registryDir: tempDir });
     const tag = `mgr-${counter++}`;
     await manager.allocate(tag);
     result = manager.get(tag);
@@ -186,12 +186,12 @@ group('Port Release', () => {
 
   baseline('releasePort: module-level API', async () => {
     const tag = `release-${counter++}`;
-    await getPort({ tag, config: { stateDir: tempDir } });
-    result = await releasePort({ tag, config: { stateDir: tempDir } });
+    await getPort({ tag, config: { registryDir: tempDir } });
+    result = await releasePort({ tag, config: { registryDir: tempDir } });
   });
 
   bench('release: via PortResolver instance', async () => {
-    const resolver = new PortResolver({ stateDir: tempDir });
+    const resolver = new PortResolver({ registryDir: tempDir });
     const tag = `release-${counter++}`;
     await resolver.get({ tag });
     result = await resolver.release({ tag });
@@ -206,7 +206,7 @@ group('Concurrent Allocation Stress Test', () => {
   baseline('concurrent: 5 parallel allocations', async () => {
     const promises = Array.from({ length: 5 }, async (_, i) => {
       const tag = `concurrent-${counter++}`;
-      return getPort({ tag, config: { stateDir: tempDir } });
+      return getPort({ tag, config: { registryDir: tempDir } });
     });
     result = await Promise.all(promises);
   });
@@ -214,7 +214,7 @@ group('Concurrent Allocation Stress Test', () => {
   bench('concurrent: 10 parallel allocations', async () => {
     const promises = Array.from({ length: 10 }, async (_, i) => {
       const tag = `concurrent-${counter++}`;
-      return getPort({ tag, config: { stateDir: tempDir } });
+      return getPort({ tag, config: { registryDir: tempDir } });
     });
     result = await Promise.all(promises);
   });

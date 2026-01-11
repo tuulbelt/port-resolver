@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { getPort, getPorts, PortManager, type PortAllocation } from '../src/index.js';
+import { getPort, getPorts, releasePort, PortManager, type PortAllocation } from '../src/index.js';
 
 // Helper: Create temporary registry for tests
 function createTempRegistry(): string {
@@ -525,6 +525,110 @@ test('Integration: New APIs with Existing PortResolver', async (t) => {
       if (result1.ok && result2.ok) {
         assert.notStrictEqual(result1.value.port, result2.value.port);
       }
+    } finally {
+      cleanupRegistry(registryDir);
+    }
+  });
+});
+
+// ============================================================================
+// releasePort() Convenience Function Tests
+// ============================================================================
+
+test('releasePort()', async (t) => {
+  await t.test('releases port by tag', async () => {
+    const registryDir = createTempRegistry();
+
+    try {
+      // Allocate a port with tag
+      const allocResult = await getPort({ tag: 'test-port', config: { registryDir } });
+      assert.strictEqual(allocResult.ok, true);
+
+      // Release by tag
+      const releaseResult = await releasePort({ tag: 'test-port', config: { registryDir } });
+      assert.strictEqual(releaseResult.ok, true);
+
+      // Verify port is released (can allocate same tag again)
+      const reallocResult = await getPort({ tag: 'test-port', config: { registryDir } });
+      assert.strictEqual(reallocResult.ok, true);
+    } finally {
+      cleanupRegistry(registryDir);
+    }
+  });
+
+  await t.test('releases port by port number', async () => {
+    const registryDir = createTempRegistry();
+
+    try {
+      // Allocate a port
+      const allocResult = await getPort({ config: { registryDir } });
+      assert.strictEqual(allocResult.ok, true);
+
+      if (allocResult.ok) {
+        const port = allocResult.value.port;
+
+        // Release by port number
+        const releaseResult = await releasePort({ port, config: { registryDir } });
+        assert.strictEqual(releaseResult.ok, true);
+      }
+    } finally {
+      cleanupRegistry(registryDir);
+    }
+  });
+
+  await t.test('returns error when neither tag nor port provided', async () => {
+    const registryDir = createTempRegistry();
+
+    try {
+      const result = await releasePort({ config: { registryDir } });
+      assert.strictEqual(result.ok, false);
+      if (!result.ok) {
+        assert.ok(result.error.message.includes('tag or port must be provided'));
+      }
+    } finally {
+      cleanupRegistry(registryDir);
+    }
+  });
+
+  await t.test('handles release of non-existent tag gracefully', async () => {
+    const registryDir = createTempRegistry();
+
+    try {
+      const result = await releasePort({ tag: 'non-existent', config: { registryDir } });
+      // Should succeed (idempotent release)
+      assert.strictEqual(result.ok, true);
+    } finally {
+      cleanupRegistry(registryDir);
+    }
+  });
+
+  await t.test('handles release of non-existent port gracefully', async () => {
+    const registryDir = createTempRegistry();
+
+    try {
+      const result = await releasePort({ port: 99999, config: { registryDir } });
+      // Should succeed (idempotent release)
+      assert.strictEqual(result.ok, true);
+    } finally {
+      cleanupRegistry(registryDir);
+    }
+  });
+
+  await t.test('releasePort integrates with getPort', async () => {
+    const registryDir = createTempRegistry();
+
+    try {
+      // Allocate
+      const port1 = await getPort({ tag: 'api', config: { registryDir } });
+      assert.strictEqual(port1.ok, true);
+
+      // Release
+      const release = await releasePort({ tag: 'api', config: { registryDir } });
+      assert.strictEqual(release.ok, true);
+
+      // Reallocate (should get potentially different port, but tag reusable)
+      const port2 = await getPort({ tag: 'api', config: { registryDir } });
+      assert.strictEqual(port2.ok, true);
     } finally {
       cleanupRegistry(registryDir);
     }

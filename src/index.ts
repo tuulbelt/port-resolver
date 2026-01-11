@@ -909,6 +909,54 @@ export async function getPorts(
   return resolver.getMultiple(count);
 }
 
+/**
+ * Release a port allocation (module-level convenience function).
+ *
+ * Release can be done by tag or port number.
+ *
+ * @example
+ * import { releasePort } from '@tuulbelt/port-resolver';
+ *
+ * // Release by tag
+ * const result = await releasePort({ tag: 'api-server' });
+ *
+ * // Release by port number
+ * const result = await releasePort({ port: 8080 });
+ *
+ * @param options - Release options (tag or port)
+ * @returns Result with void on success
+ */
+export async function releasePort(options: {
+  tag?: string;
+  port?: number;
+  config?: Partial<PortConfig>;
+}): Promise<Result<void>> {
+  const resolver = new PortResolver(options.config);
+
+  if (options.tag) {
+    // Look up port by tag, then release
+    const config = { ...DEFAULT_CONFIG, ...options.config };
+    const registryResult = readRegistry(config);
+    if (!registryResult.ok) {
+      return { ok: false, error: registryResult.error };
+    }
+
+    const registry = registryResult.value;
+    const entry = registry.entries.find(e => e.tag === options.tag);
+
+    if (!entry) {
+      // Tag not found - already released or never allocated (idempotent)
+      return { ok: true, value: undefined };
+    }
+
+    return resolver.release(entry.port);
+  } else if (options.port !== undefined) {
+    return resolver.release(options.port);
+  }
+
+  return { ok: false, error: new Error('Either tag or port must be provided') };
+}
+
 // ============================================================================
 // Port Manager (Lifecycle Management)
 // ============================================================================
