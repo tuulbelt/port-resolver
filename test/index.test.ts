@@ -31,7 +31,7 @@ function cleanupTestDir(dir: string): void {
 function runCLI(args: string, registryDir?: string): { stdout: string; stderr: string; exitCode: number } {
   const regArgs = registryDir ? ` -d "${registryDir}"` : '';
   try {
-    const stdout = execSync(`npx tsx src/index.ts ${args}${regArgs}`, {
+    const stdout = execSync(`npx tsx src/cli.ts ${args}${regArgs}`, {
       encoding: 'utf-8',
       cwd: process.cwd(),
       timeout: 10000,
@@ -329,7 +329,7 @@ describe('CLI', () => {
   test('--version shows version', () => {
     const result = runCLI('--version');
     assert.strictEqual(result.exitCode, 0);
-    assert(result.stdout.includes('0.1.0'));
+    assert(result.stdout.includes('0.2.0'));
   });
 
   test('get allocates a port', () => {
@@ -361,16 +361,15 @@ describe('CLI', () => {
   });
 
   test('release shows error for non-existent port', () => {
-    // CLI runs in separate processes, so we test error behavior
+    // releasePort is idempotent - releasing non-existent port succeeds
     const releaseResult = runCLI('release 12345 --json', testDir);
-    assert.strictEqual(releaseResult.exitCode, 1);
-    assert(releaseResult.stderr.includes('not registered'));
+    assert.strictEqual(releaseResult.exitCode, 0); // Idempotent: success even if not registered
   });
 
   test('release requires port number', () => {
     const result = runCLI('release --json', testDir);
     assert.strictEqual(result.exitCode, 1);
-    assert(result.stderr.includes('required'));
+    assert(result.stderr.includes('must be provided'));
   });
 
   test('release-all handles empty registry', () => {

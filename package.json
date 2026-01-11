@@ -5,9 +5,19 @@
   "main": "src/index.ts",
   "type": "module",
   "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core/index.ts",
+    "./api": "./src/api/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./registry": "./src/registry/index.ts",
+    "./types": "./src/types.ts",
+    "./config": "./src/config.ts",
+    "./package.json": "./package.json"
+  },
   "bin": {
-    "portres": "./src/index.ts",
-    "port-resolver": "./src/index.ts"
+    "portres": "./src/cli.ts",
+    "port-resolver": "./src/cli.ts"
   },
   "scripts": {
     "build": "tsc",
