@@ -6,7 +6,7 @@
 ![Version](https://img.shields.io/badge/version-0.2.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![Uses semats](https://img.shields.io/badge/uses-semats-blue)
-![Tests](https://img.shields.io/badge/tests-125%20passing-success)
+![Tests](https://img.shields.io/badge/tests-153%20passing-success)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Concurrent port allocation for any application — avoid port conflicts in tests, servers, microservices, and development environments.

@@ -4,6 +4,7 @@
   "description": "Concurrent port allocation for any application - avoid port conflicts in tests, servers, microservices, and development environments",
   "main": "src/index.ts",
   "type": "module",
+  "sideEffects": false,
   "bin": {
     "portres": "./src/index.ts",
     "port-resolver": "./src/index.ts"
