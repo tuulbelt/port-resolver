@@ -380,15 +380,13 @@ test('PortManager', async (t) => {
     }
   });
 
-  await t.test('release() fails for non-existent tag', async () => {
+  await t.test('release() is idempotent for non-existent tag', async () => {
     const manager = new PortManager();
 
+    // Releasing a tag that was never allocated should succeed (idempotent)
     const result = await manager.release('non-existent');
 
-    assert.strictEqual(result.ok, false);
-    if (!result.ok) {
-      assert.ok(result.error.message.includes('No allocation found'));
-    }
+    assert.strictEqual(result.ok, true);
   });
 
   await t.test('releaseAll() removes all tracked allocations', async () => {

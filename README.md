@@ -6,7 +6,7 @@
 ![Version](https://img.shields.io/badge/version-0.2.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![Uses semats](https://img.shields.io/badge/uses-semats-blue)
-![Tests](https://img.shields.io/badge/tests-153%20passing-success)
+![Tests](https://img.shields.io/badge/tests-159%20passing-success)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Concurrent port allocation for any application — avoid port conflicts in tests, servers, microservices, and development environments.
@@ -270,16 +270,23 @@ const resolver = new PortResolver({
 
 ### PortManager Class (v0.2.0)
 
-Track and manage port allocations by tag:
+Track and manage port allocations by tag with lifecycle management:
 
 | Method | Description |
 |--------|-------------|
-| `allocate(tag)` | Allocate port and track by tag |
-| `allocateMultiple(count, tag?)` | Allocate multiple ports |
-| `release(tagOrPort)` | Release by tag or port number |
-| `releaseAll()` | Release all managed ports |
-| `getAllocations()` | Get all tracked allocations |
-| `get(tag)` | Get allocation by tag |
+| `allocate(tag)` | Allocate port and track by tag. **Prevents duplicate tags** within this instance. |
+| `allocateMultiple(count, tag?)` | Allocate multiple ports atomically. All share same tag if provided. |
+| `release(tagOrPort)` | Release by tag or port number. **Idempotent** - succeeds even if already released. |
+| `releaseAll()` | Release all managed ports. Returns count of ports released. |
+| `getAllocations()` | Get all tracked allocations as array of `PortAllocation` objects. |
+| `get(tag)` | Get specific allocation by tag. Returns `undefined` if not found. |
+
+**Important Behavior Notes:**
+
+- **Tags are per-instance**: Each `PortManager` instance has independent tag tracking. Two instances can use the same tag (they'll get different ports).
+- **Duplicate tag prevention**: Calling `allocate(tag)` twice with the same tag will fail to prevent losing track of the first allocation.
+- **Idempotent release**: `release(tag)` succeeds even if the tag was never allocated or already released.
+- **Registry is shared**: All `PortManager` instances share the same registry file, so allocated ports are globally tracked even if tags are independent.
 
 ### `isPortAvailable(port, host?)`
 
@@ -313,14 +320,16 @@ See also [CI_INTEGRATION.md](CI_INTEGRATION.md) for comprehensive CI/CD integrat
 ## Testing
 
 ```bash
-npm test              # Run all tests (125 tests)
+npm test              # Run all tests (159 tests)
 npm test -- --watch   # Watch mode
 ```
 
 **Test breakdown:**
-- 79 baseline tests (v0.1.0)
+- 79 baseline tests (v0.1.0 core functionality)
 - 27 module-level API tests (getPort, getPorts, PortManager)
 - 19 range API tests (reserveRange, getPortInRange)
+- 21 edge case tests (corruption recovery, concurrent instances, boundaries)
+- 13 resilience tests (stress testing, lifecycle patterns)
 
 ## Library Composition
 

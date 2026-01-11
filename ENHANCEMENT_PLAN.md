@@ -129,8 +129,10 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
   - [x] Port manager tests (included in 27 tests)
   - [x] Port range tests (19 tests in range-apis.test.ts)
   - [x] Result type tests (comprehensive from v0.1.0)
-  - [x] **Achievement: 128 tests total (79 baseline + 30 + 19)** 📊
-  - [x] Target was 95+ tests - achieved 128 tests (35% over target)
+  - [x] Edge case tests (21 tests in edge-cases.test.ts)
+  - [x] Resilience tests (13 tests in edge-cases.test.ts)
+  - [x] **Achievement: 159 tests total** 📊
+  - [x] Target was 95+ tests - achieved 159 tests (67% over target)
 
 - [x] **4.2 Integration Tests** (HIGH) ✅ **COMPLETE**
   - [x] Multi-process concurrent allocation (cross-process tests in v0.1.0)
@@ -212,8 +214,8 @@ This document tracks the enhancement of port-resolver from v0.1.0 (foundation to
   - README updated with v0.2.0 APIs
 
 - [x] **Tests:** 95+ tests passing (from 56) ✅
-  - **Achievement: 128 tests (35% over target)**
-  - 79 baseline + 30 new APIs + 19 range APIs
+  - **Achievement: 159 tests (67% over target)**
+  - 79 baseline + 27 new APIs + 19 range APIs + 21 edge cases + 13 resilience
   - 100% pass rate maintained
 
 - [x] **CLI:** Machine-readable output + all new commands ✅
