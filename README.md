@@ -359,10 +359,8 @@ npx tsx examples/parallel-tests.ts     # Parallel test execution patterns
 npx tsx examples/batch-allocation.ts   # Module-level APIs (getPort, getPorts)
 npx tsx examples/port-manager.ts       # Lifecycle management with PortManager
 npx tsx examples/ci-integration.ts     # CI/CD integration patterns
-
-# v0.3.0 Modularization & Tree-Shaking
-npx tsx examples/modular-imports.ts    # 8 entry points for optimal bundle size
-npx tsx examples/tree-shaking.ts       # Bundle size optimization guide
+# v0.3.0 Modularization
+npx tsx examples/modular-imports.ts    # Tree-shaking with 8 entry points
 ```
 
 See also [CI_INTEGRATION.md](CI_INTEGRATION.md) for comprehensive CI/CD integration guide.
@@ -370,7 +368,7 @@ See also [CI_INTEGRATION.md](CI_INTEGRATION.md) for comprehensive CI/CD integrat
 ## Testing
 
 ```bash
-npm test              # Run all tests (159 tests)
+npm test              # Run all tests (198 tests)
 npm test -- --watch   # Watch mode
 ```
 

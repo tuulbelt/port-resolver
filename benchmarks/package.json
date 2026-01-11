@@ -5,9 +5,10 @@
   "type": "module",
   "description": "Performance benchmarks for port-resolver",
   "scripts": {
-    "bench": "node --import tsx index.bench.ts",
-    "bench:compare-api": "node --import tsx comparable-api.bench.ts",
-    "bench:compare": "node --import tsx index.bench.ts && node --import tsx competitors/get-port.bench.ts && node --import tsx competitors/detect-port.bench.ts"
+    "bench": "node --import tsx internal/operations.bench.ts",
+    "bench:internal": "node --import tsx internal/operations.bench.ts",
+    "bench:external": "node --import tsx external/get-port.bench.ts && node --import tsx external/detect-port.bench.ts",
+    "bench:all": "npm run bench:internal && echo '\n--- External Comparison ---\n' && npm run bench:external"
   },
   "devDependencies": {
     "tatami-ng": "^0.8.18",
