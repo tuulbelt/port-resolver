@@ -3,10 +3,11 @@
 # Port Resolver / `portres`
 
 [![Tests](https://github.com/tuulbelt/port-resolver/actions/workflows/test.yml/badge.svg)](https://github.com/tuulbelt/port-resolver/actions/workflows/test.yml)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
 ![Uses semats](https://img.shields.io/badge/uses-semats-blue)
-![Tests](https://img.shields.io/badge/tests-79%20passing-success)
+![Tests](https://img.shields.io/badge/tests-194%20passing-success)
+![Tree Shakable](https://img.shields.io/badge/tree--shakable-yes-brightgreen)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Concurrent port allocation for any application — avoid port conflicts in tests, servers, microservices, and development environments.
@@ -37,11 +38,61 @@ This happens in many scenarios:
 ## Features
 
 - **Zero external dependencies** — Uses only Node.js standard library + Tuulbelt tools
+- **Tree-shakable & modular** — Import only what you need with 8 entry points
 - **File-based registry** — Survives process restarts
+- **Contiguous port ranges** — Reserve adjacent ports for microservices clusters
+- **Bounded allocation** — Get ports within specific ranges (firewall rules, compliance)
+- **Module-level convenience APIs** — Simple `getPort()` and `getPorts()` functions
+- **Port lifecycle management** — Track allocations by tag with `PortManager`
+- **Batch allocation with rollback** — All-or-nothing semantics for atomic operations
 - **Stale entry cleanup** — Automatically removes dead process entries
 - **Semaphore-protected registry** — Atomic access via [semats](https://github.com/tuulbelt/file-based-semaphore-ts)
 - **Result pattern** — Clear error handling without exceptions
 - **CLI and library API** — Use from shell or TypeScript
+
+## Modularization & Tree-Shaking
+
+Port Resolver v0.3.0 is fully modularized with **8 entry points** for optimal tree-shaking:
+
+```typescript
+// Main entry - everything (default)
+import { PortResolver, getPort } from '@tuulbelt/port-resolver';
+
+// Import only core classes (saves ~40% bundle size)
+import { PortResolver, PortManager } from '@tuulbelt/port-resolver/core';
+
+// Import only convenience APIs (saves ~65% bundle size)
+import { getPort, getPorts, releasePort } from '@tuulbelt/port-resolver/api';
+
+// Import only utilities (saves ~80% bundle size)
+import { sanitizeTag, validatePath } from '@tuulbelt/port-resolver/utils';
+
+// Import only types (zero runtime code)
+import type { PortConfig, PortEntry } from '@tuulbelt/port-resolver/types';
+```
+
+**Available entry points:**
+- `.` — Full API (default)
+- `/core` — `PortResolver`, `PortManager` classes
+- `/api` — `getPort()`, `getPorts()`, `releasePort()` functions
+- `/utils` — Helper utilities (`sanitizeTag`, `validatePath`, etc.)
+- `/registry` — Registry operations (`readRegistry`, `writeRegistry`, etc.)
+- `/types` — TypeScript type definitions (no runtime code)
+- `/config` — Configuration constants (`DEFAULT_CONFIG`, etc.)
+
+**Bundle size comparison:**
+| Import | Bundle Size (minified) | vs Full API |
+|--------|------------------------|-------------|
+| Full API | ~28 KB | baseline |
+| Core only | ~17 KB | -40% |
+| API only | ~10 KB | -65% |
+| Utils only | ~5 KB | -80% |
+
+**How it works:**
+- `package.json` exports field defines entry points
+- `sideEffects: false` enables aggressive tree-shaking
+- Each module is independently importable
+- No code duplication (shared utilities factored out)
 
 ## Installation
 
@@ -69,12 +120,14 @@ portres --help
 For local development without global install:
 
 ```bash
-npx tsx src/index.ts --help
+npx tsx src/cli.ts --help
 ```
 
 ## Usage
 
 ### As a Library
+
+**Basic Usage (Class API):**
 
 ```typescript
 import { PortResolver } from './src/index.ts';
@@ -100,6 +153,64 @@ if (ports.ok) {
 
 // Release all ports at end of test suite
 await resolver.releaseAll();
+```
+
+**v0.2.0 New APIs:**
+
+```typescript
+import { getPort, getPorts, PortManager, PortResolver } from './src/index.ts';
+
+// Module-level convenience API (no class instantiation needed)
+const port = await getPort({ tag: 'api-server' });
+if (port.ok) {
+  console.log(`API server port: ${port.value.port}`);
+}
+
+// Batch allocation with individual tags
+const services = await getPorts(3, {
+  tags: ['http-server', 'grpc-server', 'metrics-server'],
+});
+if (services.ok) {
+  console.log('Service ports:', services.value.map(p => `${p.tag}: ${p.port}`));
+}
+
+// Reserve contiguous port range (for microservices cluster)
+const resolver = new PortResolver();
+const cluster = await resolver.reserveRange({
+  start: 50000,
+  count: 5,
+  tag: 'backend-cluster',
+});
+if (cluster.ok) {
+  console.log('Cluster ports:', cluster.value.map(p => p.port).join(', '));
+  // Allocated: 50000, 50001, 50002, 50003, 50004 (contiguous)
+}
+
+// Get port within specific range (for firewall/compliance requirements)
+const apiPort = await resolver.getPortInRange({
+  min: 8000,
+  max: 9000,
+  tag: 'public-api',
+});
+if (apiPort.ok) {
+  console.log(`Public API port (8000-9000): ${apiPort.value.port}`);
+}
+
+// Port lifecycle management with PortManager
+const manager = new PortManager();
+await manager.allocate('frontend');
+await manager.allocate('backend');
+await manager.allocate('database');
+
+// Access by tag
+const frontend = manager.get('frontend');
+console.log(`Frontend port: ${frontend?.port}`);
+
+// Release by tag instead of port number
+await manager.release('frontend');
+
+// Release all managed ports
+await manager.releaseAll();
 ```
 
 ### As a CLI
@@ -146,6 +257,14 @@ portres clean
 
 # Clear entire registry
 portres clear
+
+# v0.2.0: Reserve contiguous port range
+portres reserve-range -p 50000 -n 5 -t cluster
+# Allocated: 50000, 50001, 50002, 50003, 50004
+
+# v0.2.0: Get port within specific range
+portres get-in-range --min-port 8000 --max-port 9000 -t api
+# 8042
 ```
 
 ## API
@@ -168,6 +287,8 @@ const resolver = new PortResolver({
 
 ### Methods
 
+**Core Methods:**
+
 | Method | Description |
 |--------|-------------|
 | `get(options?)` | Get a single available port |
@@ -178,6 +299,40 @@ const resolver = new PortResolver({
 | `clean()` | Remove stale entries |
 | `status()` | Get registry status |
 | `clear()` | Clear entire registry |
+
+**v0.2.0 New Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `reserveRange(options)` | Reserve contiguous port range (e.g., 50000-50004) |
+| `getPortInRange(options)` | Get any port within specific bounds (e.g., 8000-9000) |
+
+### Module-Level Convenience APIs (v0.2.0)
+
+| Function | Description |
+|----------|-------------|
+| `getPort(options?)` | Convenience wrapper for single port allocation |
+| `getPorts(count, options?)` | Batch allocation with individual tags or shared tag |
+
+### PortManager Class (v0.2.0)
+
+Track and manage port allocations by tag with lifecycle management:
+
+| Method | Description |
+|--------|-------------|
+| `allocate(tag)` | Allocate port and track by tag. **Prevents duplicate tags** within this instance. |
+| `allocateMultiple(count, tag?)` | Allocate multiple ports atomically. All share same tag if provided. |
+| `release(tagOrPort)` | Release by tag or port number. **Idempotent** - succeeds even if already released. |
+| `releaseAll()` | Release all managed ports. Returns count of ports released. |
+| `getAllocations()` | Get all tracked allocations as array of `PortAllocation` objects. |
+| `get(tag)` | Get specific allocation by tag. Returns `undefined` if not found. |
+
+**Important Behavior Notes:**
+
+- **Tags are per-instance**: Each `PortManager` instance has independent tag tracking. Two instances can use the same tag (they'll get different ports).
+- **Duplicate tag prevention**: Calling `allocate(tag)` twice with the same tag will fail to prevent losing track of the first allocation.
+- **Idempotent release**: `release(tag)` succeeds even if the tag was never allocated or already released.
+- **Registry is shared**: All `PortManager` instances share the same registry file, so allocated ports are globally tracked even if tags are independent.
 
 ### `isPortAvailable(port, host?)`
 
@@ -195,16 +350,34 @@ if (available) {
 See the `examples/` directory for runnable examples:
 
 ```bash
-npx tsx examples/basic.ts     # Basic usage
-npx tsx examples/advanced.ts  # Advanced patterns
+# Fundamentals
+npx tsx examples/basic.ts              # Basic usage
+npx tsx examples/advanced.ts           # Advanced patterns
+
+# v0.2.0 New APIs
+npx tsx examples/parallel-tests.ts     # Parallel test execution patterns
+npx tsx examples/batch-allocation.ts   # Module-level APIs (getPort, getPorts)
+npx tsx examples/port-manager.ts       # Lifecycle management with PortManager
+npx tsx examples/ci-integration.ts     # CI/CD integration patterns
+# v0.3.0 Modularization
+npx tsx examples/modular-imports.ts    # Tree-shaking with 8 entry points
 ```
+
+See also [CI_INTEGRATION.md](CI_INTEGRATION.md) for comprehensive CI/CD integration guide.
 
 ## Testing
 
 ```bash
-npm test              # Run all tests (79 tests)
+npm test              # Run all tests (198 tests)
 npm test -- --watch   # Watch mode
 ```
+
+**Test breakdown:**
+- 79 baseline tests (v0.1.0 core functionality)
+- 27 module-level API tests (getPort, getPorts, PortManager)
+- 19 range API tests (reserveRange, getPortInRange)
+- 21 edge case tests (corruption recovery, concurrent instances, boundaries)
+- 13 resilience tests (stress testing, lifecycle patterns)
 
 ## Library Composition
 
